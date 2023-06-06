@@ -1,56 +1,69 @@
 package main
 
-func main() {
+import "fmt"
 
+func main() {
+	var testCompleteGraph, testPathGraph Graph
+
+	for i := 0; i < 5; i++ {
+		testCompleteGraph.addNode()
+	}
+	for i, n := range testCompleteGraph.Nodes {
+		for j, m := range testCompleteGraph.Nodes {
+			if i != j {
+				testCompleteGraph.addArc(n, m)
+			}
+		}
+	}
+	fmt.Println(testCompleteGraph)
+	fmt.Println(testCompleteGraph.IsComplete())
+	fmt.Println(testCompleteGraph.IsCycle())
+	fmt.Println(testCompleteGraph.IsPath())
+	fmt.Println(testCompleteGraph.HasEuclidianPath())
+
+	testPathGraph.addNode()
+	testPathGraph.addNode()
+	testPathGraph.addArc(testPathGraph.Nodes[0], testPathGraph.Nodes[1])
+	testPathGraph.addArc(testPathGraph.Nodes[1], testPathGraph.Nodes[0])
+	fmt.Println(testPathGraph)
+	fmt.Println(testPathGraph.IsComplete())
+	fmt.Println(testPathGraph.IsCycle())
+	fmt.Println(testPathGraph.IsPath())
+	fmt.Println(testPathGraph.HasEuclidianPath())
 }
 
 type Node struct {
-	Index         int
-	AdjacentNodes map[int]*Node
+	ID int
 }
 
-// graph arcs are implicitly defined as those in which connected nodes belong to the graph
+type Arc struct {
+	From int
+	To   int
+}
+
 type Graph struct {
-	Nodes map[int]*Node
+	Nodes []Node
+	Arcs  [][]Arc
 }
 
-func (g Graph) Inflow(node *Node) int {
-
-	inflow := 0
-	for _, v := range g.Nodes {
-		for _, w := range v.AdjacentNodes {
-			if w == node {
-				inflow++
-			}
-		}
-	}
-	return inflow
+func (g *Graph) addNode() {
+	g.Nodes = append(g.Nodes, Node{ID: len(g.Nodes)})
+	g.Arcs = append(g.Arcs, make([]Arc, 0))
 }
 
-func (g Graph) Outflow(node *Node) int {
-	outflow := 0
-	for _, v := range node.AdjacentNodes {
-		for _, w := range g.Nodes {
-			if v == w {
-				outflow++
-			}
-		}
-	}
-	return outflow
+func (g *Graph) addArc(from Node, to Node) {
+	nodeArcs := append(g.Arcs[from.ID], Arc{From: from.ID, To: to.ID})
+	g.Arcs[from.ID] = nodeArcs
 }
 
-func (g Graph) Netflow(node *Node) int {
-	return g.Outflow(node) - g.Inflow(node)
-}
-
-func (g Graph) Degree(node *Node) int {
-	return g.Outflow(node)
+func (g Graph) Degree(n Node) int {
+	return len(g.Arcs[n.ID])
 }
 
 func (g Graph) IsComplete() bool {
 	complete := true
-	for _, v := range g.Nodes {
-		if g.Degree(v) != len(g.Nodes)-1 {
+	for _, n := range g.Nodes {
+		if g.Degree(n) != len(g.Nodes)-1 {
 			complete = false
 			break
 		}
@@ -60,10 +73,10 @@ func (g Graph) IsComplete() bool {
 
 func (g Graph) IsPath() bool {
 	ends, transitions := 0, 0
-	for _, v := range g.Nodes {
-		if g.Degree(v) == 1 {
+	for _, n := range g.Nodes {
+		if g.Degree(n) == 1 {
 			ends++
-		} else if g.Degree(v) == 1 {
+		} else if g.Degree(n) == 2 {
 			transitions++
 		}
 	}
@@ -72,8 +85,8 @@ func (g Graph) IsPath() bool {
 
 func (g Graph) IsCycle() bool {
 	transitions := 0
-	for _, v := range g.Nodes {
-		if g.Degree(v) == 0 {
+	for _, n := range g.Nodes {
+		if g.Degree(n) == 0 {
 			transitions++
 		}
 	}
@@ -81,11 +94,11 @@ func (g Graph) IsCycle() bool {
 }
 
 func (g Graph) HasEuclidianPath() bool {
-	ends := 0
-	for _, v := range g.Nodes {
-		if g.Degree(v) == 1 {
-			ends++
+	odd := 0
+	for _, n := range g.Nodes {
+		if g.Degree(n)%2 == 1 {
+			odd++
 		}
 	}
-	return ends == 0 || ends == 2
+	return odd == 0 || odd == 2
 }
